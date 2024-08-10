@@ -2,8 +2,8 @@
 import { Box, Stack, Button, TextField, Modal, Typography } from "@mui/material";
 import { useState, useEffect, useRef } from 'react';
 import { keyframes } from '@emotion/react';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // Import the CheckCircleIcon
-import CancelIcon from '@mui/icons-material/Cancel'; // Import the CancelIcon
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 // Define the shake animation using keyframes
 const shake = keyframes`
@@ -26,7 +26,8 @@ export default function Home() {
   const [apiKey, setApiKey] = useState(''); // State to store the user's API key
   const [loadingDots, setLoadingDots] = useState('');
   const [open, setOpen] = useState(false); // Start with modal closed
-  const [shakeButton, setShakeButton] = useState(false); // State to control the shake animation
+  const [shakeButton, setShakeButton] = useState(false); // State to control the shake animation for the button
+  const [shakeInput, setShakeInput] = useState(false); // State to control the shake animation for the input field
   const [apiKeyEntered, setApiKeyEntered] = useState(false); // Track if API key is entered
   const [apiKeyValid, setApiKeyValid] = useState(false); // Track if the API key is valid
   const [errorMessage, setErrorMessage] = useState(''); // Store any error messages
@@ -84,8 +85,14 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!apiKeyValid) {
-      setShakeButton(true); // Trigger the shake animation
+      setShakeButton(true); // Trigger the shake animation for the button
       setTimeout(() => setShakeButton(false), 1000); // Stop the shake animation after 1 second
+      return;
+    }
+
+    if (!message.trim()) {
+      setShakeInput(true); // Trigger the shake animation for the input field
+      setTimeout(() => setShakeInput(false), 1000); // Stop the shake animation after 1 second
       return;
     }
 
@@ -205,6 +212,14 @@ export default function Home() {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             autoComplete="off"
+            sx={{
+              animation: shakeInput ? `${shake} 0.5s` : 'none',
+              borderColor: shakeInput ? 'red' : 'primary.main',
+              '& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline': {
+                borderColor: shakeInput ? 'red' : 'primary.main',
+              },
+            }}
+            error={shakeInput && apiKeyValid} // Show error state when shaking and if API key is valid
           />
           <Button variant="contained" onClick={sendMessage}>Send</Button>
         </Stack>
