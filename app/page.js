@@ -1,7 +1,9 @@
 'use client'
 import { Box, Stack, Button, TextField, Modal, Typography } from "@mui/material";
 import { useState, useEffect, useRef } from 'react';
-import { keyframes } from '@emotion/react'; // Import keyframes for the shake animation
+import { keyframes } from '@emotion/react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // Import the CheckCircleIcon
+import CancelIcon from '@mui/icons-material/Cancel'; // Import the CancelIcon
 
 // Define the shake animation using keyframes
 const shake = keyframes`
@@ -25,6 +27,9 @@ export default function Home() {
   const [loadingDots, setLoadingDots] = useState('');
   const [open, setOpen] = useState(false); // Start with modal closed
   const [shakeButton, setShakeButton] = useState(false); // State to control the shake animation
+  const [apiKeyEntered, setApiKeyEntered] = useState(false); // Track if API key is entered
+  const [apiKeyValid, setApiKeyValid] = useState(false); // Track if the API key is valid
+  const [errorMessage, setErrorMessage] = useState(''); // Store any error messages
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -46,17 +51,39 @@ export default function Home() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
+  const validateApiKey = async () => {
+    try {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          Authorization: `Bearer ${apiKey}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid API Key');
+      }
+
+      setApiKeyValid(true); // Mark the API key as valid
+      setApiKeyEntered(true); // Mark the API key as entered
+      setErrorMessage('');
+      handleClose();
+    } catch (error) {
+      setApiKeyValid(false); // Mark the API key as invalid
+      setErrorMessage('Invalid API Key. Please try again.');
+    }
+  };
+
   const handleApiKeySubmit = () => {
     if (apiKey.trim() === '') {
       setShakeButton(true);
       setTimeout(() => setShakeButton(false), 1000);
       return;
     }
-    handleClose();
+    validateApiKey(); // Validate the API key on submission
   };
 
   const sendMessage = async () => {
-    if (!apiKey) {
+    if (!apiKeyValid) {
       setShakeButton(true); // Trigger the shake animation
       setTimeout(() => setShakeButton(false), 1000); // Stop the shake animation after 1 second
       return;
@@ -151,21 +178,23 @@ export default function Home() {
               </Box>
             </Box>
           ))}
-          <Box display="flex" justifyContent="center" mt={2}>
-            <Button
-              variant="contained"
-              onClick={handleOpen}
-              sx={{
-                animation: shakeButton ? `${shake} 0.5s` : 'none',
-                bgcolor: shakeButton ? 'red' : 'secondary.main',
-                '&:hover': {
-                  bgcolor: shakeButton ? 'red' : 'secondary.dark', // Darker purple on hover
-                },
-              }}
-            >
-              To get started, enter your API key
-            </Button>
-          </Box>
+          {!apiKeyEntered && ( // Only show the button if API key hasn't been entered
+            <Box display="flex" justifyContent="center" mt={2}>
+              <Button
+                variant="contained"
+                onClick={handleOpen}
+                sx={{
+                  animation: shakeButton ? `${shake} 0.5s` : 'none',
+                  bgcolor: shakeButton ? 'red' : 'secondary.main',
+                  '&:hover': {
+                    bgcolor: shakeButton ? 'red' : 'secondary.dark', // Darker purple on hover
+                  },
+                }}
+              >
+                To get started, enter your API key
+              </Button>
+            </Box>
+          )}
           <div ref={messagesEndRef} />
         </Stack>
         <Stack direction="row" spacing={2}>
@@ -213,6 +242,8 @@ export default function Home() {
               onChange={(e) => setApiKey(e.target.value)}
               autoComplete="off"
               margin="normal"
+              error={!!errorMessage} // Show error styling if there's an error
+              helperText={errorMessage} // Show the error message if invalid
             />
             <Button variant="contained" color="primary" onClick={handleApiKeySubmit}>
               Submit
@@ -220,6 +251,20 @@ export default function Home() {
           </Box>
         </Box>
       </Modal>
+
+      <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center' }}>
+        {apiKeyValid ? (
+          <>
+            <CheckCircleIcon sx={{ color: 'green', mr: 1 }} />
+            <Typography variant="body2" sx={{ color: 'green' }}>Online</Typography>
+          </>
+        ) : (
+          <>
+            <CancelIcon sx={{ color: 'red', mr: 1 }} />
+            <Typography variant="body2" sx={{ color: 'red' }}>Offline</Typography>
+          </>
+        )}
+      </Box>
     </Box>
   );
 }
