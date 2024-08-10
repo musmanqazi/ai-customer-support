@@ -36,7 +36,7 @@ export default function Home() {
         }
         const text = decoder.decode(value || new Int8Array(), {stream:true})
         setMessages((messages) => {
-          let lastMessage = message[messages.length - 1]
+          let lastMessage = messages[messages.length - 1]
           let otherMessages = messages.slice(0, messages.length - 1)
           return[
             ...otherMessages,
@@ -72,13 +72,13 @@ export default function Home() {
       height= "700px"
       border = "1px solid black"
       p={2}
-      spacing = {2}
+      spacing={2}
     >
     <Stack 
       direction="column" 
-      spacing = {2} 
-      flexGrow = {1}
-      overflow= "auto" 
+      spacing={2} 
+      flexGrow={1}
+      overflow="auto" 
       max = "100%" 
     >
       {messages.map((message, index) => (
@@ -104,11 +104,12 @@ export default function Home() {
     </Stack>
       <Stack direction="row" spacing={2}>
         <TextField
-          label = "message"
+          label = "Message"
           fullWidth
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
+          autoComplete="off"
           />
           <Button variant="contained" onClick={sendMessage}>Send</Button>
       </Stack>
