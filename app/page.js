@@ -26,7 +26,7 @@ export default function Home() {
   const [loadingDots, setLoadingDots] = useState("");
   const [shakeInput, setShakeInput] = useState(false);
   const [apiKeyValid, setApiKeyValid] = useState(false);
-  const [isResponding, setIsResponding] = useState(false); // New state for tracking if chatbot is responding
+  const [isResponding, setIsResponding] = useState(false);
   const messagesEndRef = useRef(null);
   const [isScrollbarActive, setIsScrollbarActive] = useState(false);
 
@@ -47,7 +47,6 @@ export default function Home() {
   }, [messages]);
 
   useEffect(() => {
-    // Function to check if the scrollbar is active
     const checkScrollbar = () => {
       const element = messagesEndRef.current?.parentElement;
       if (element && element.scrollHeight > element.clientHeight) {
@@ -57,15 +56,14 @@ export default function Home() {
       }
     };
 
-    checkScrollbar(); // Check scrollbar on load
-    window.addEventListener('resize', checkScrollbar); // Re-check on window resize
+    checkScrollbar();
+    window.addEventListener('resize', checkScrollbar);
 
     return () => {
       window.removeEventListener('resize', checkScrollbar);
     };
   }, [messages]);
 
-  // Check API Key on page load
   useEffect(() => {
     const checkApiKey = async () => {
       try {
@@ -74,20 +72,20 @@ export default function Home() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify([{ role: "user", content: "Ping" }]), // A simple ping message to check API key
+          body: JSON.stringify([{ role: "user", content: "Ping" }]),
         });
 
         if (response.ok) {
-          setApiKeyValid(true); // Mark as Online
+          setApiKeyValid(true);
         } else {
-          setApiKeyValid(false); // Mark as Offline if the response fails
+          setApiKeyValid(false);
         }
       } catch (error) {
-        setApiKeyValid(false); // Mark as Offline in case of an error
+        setApiKeyValid(false);
       }
     };
 
-    checkApiKey(); // Validate API key when the page loads
+    checkApiKey();
   }, []);
 
   const sendMessage = async () => {
@@ -97,7 +95,7 @@ export default function Home() {
       return;
     }
 
-    setIsResponding(true); // Disable input and send button while responding
+    setIsResponding(true);
     setMessage("");
     setMessages((messages) => [
       ...messages,
@@ -107,7 +105,6 @@ export default function Home() {
     setLoadingDots(".");
 
     try {
-      // Check API Key before sending the message to ensure it's back online
       const apiKeyResponse = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -117,9 +114,9 @@ export default function Home() {
       });
 
       if (apiKeyResponse.ok) {
-        setApiKeyValid(true); // Set status to online if the API key is valid again
+        setApiKeyValid(true);
       } else {
-        setApiKeyValid(false); // Keep offline status if API key is still invalid
+        setApiKeyValid(false);
       }
 
       const response = await fetch("/api/chat", {
@@ -137,12 +134,12 @@ export default function Home() {
       reader.read().then(function processText({ done, value }) {
         if (done) {
           setLoadingDots("");
-          setIsResponding(false); // Re-enable input and send button when done
+          setIsResponding(false);
           return result;
         }
         const text = decoder.decode(value || new Int8Array(), { stream: true });
         if (text.includes("The chatbot is going offline")) {
-          setApiKeyValid(false); // Set status to offline if error message is received
+          setApiKeyValid(false);
         }
         setMessages((messages) => {
           let lastMessage = messages[messages.length - 1];
@@ -158,8 +155,8 @@ export default function Home() {
         return reader.read().then(processText);
       });
     } catch (error) {
-      setIsResponding(false); // Ensure input is re-enabled in case of an error
-      setApiKeyValid(false); // Ensure it sets to offline in case of an error
+      setIsResponding(false);
+      setApiKeyValid(false);
     }
   };
 
@@ -180,11 +177,15 @@ export default function Home() {
       flexDirection="column"
       justifyContent="center"
       alignItems="center"
+      sx={{
+        padding: "16px",
+        boxSizing: "border-box",
+      }}
     >
       <Stack
         direction="column"
-        width="600px"
-        height="700px"
+        width={{ xs: "100%", sm: "100%", md: "600px" }}
+        height={{ xs: "90vh", sm: "90vh", md: "700px" }}
         border="1px solid black"
         p={2}
         spacing={2}
@@ -201,7 +202,12 @@ export default function Home() {
           overflow="auto"
           max="100%"
           sx={{
-            paddingRight: '16px'
+            paddingRight: '16px',
+            paddingLeft: '16px',
+            "@media (max-width: 600px)": {
+              paddingRight: isScrollbarActive ? '12px' : '12px',
+              paddingLeft: '12px',
+            },
           }}
         >
           {messages.map((message, index) => (
@@ -213,21 +219,24 @@ export default function Home() {
               }
             >
               <Box
-                sx={{ maxWidth: "87.5%" }} // Limits the width of the message bubbles
-                bgcolor={
-                  message.role === "assistant" ? "primary.main" : "secondary.main"
-                }
-                color="white"
-                borderRadius={7}
-                p={3}
-                style={{
-                  whiteSpace: "pre-wrap",
-                  overflowWrap: "break-word",
-                  wordBreak: "break-word",
+                sx={{
+                  maxWidth: "87.5%", 
+                  bgcolor: message.role === "assistant" ? "primary.main" : "secondary.main",
+                  color: "white",
+                  borderRadius: 7,
+                  p: 3,
+                  style: {
+                    whiteSpace: "pre-wrap",
+                    overflowWrap: "break-word",
+                    wordBreak: "break-word",
+                  },
+                  "@media (max-width: 600px)": {
+                    padding: 2,
+                    maxWidth: "80%", // Slightly reduce bubble width on mobile
+                  },
                 }}
               >
-                {message.content ||
-                  (message.role === "assistant" ? loadingDots : "")}
+                {message.content || (message.role === "assistant" ? loadingDots : "")}
               </Box>
             </Box>
           ))}
@@ -237,7 +246,10 @@ export default function Home() {
           direction="row"
           spacing={2}
           sx={{
-            paddingRight: '16px', // Ensures padding for the send button
+            paddingRight: '16px',
+            "@media (max-width: 600px)": {
+              paddingRight: '12px',
+            },
           }}
         >
           <TextField
@@ -253,13 +265,22 @@ export default function Home() {
               "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline": {
                 borderColor: shakeInput ? "red" : "primary.main",
               },
+              "@media (max-width: 600px)": {
+                padding: '10px',
+              },
             }}
-            error={shakeInput} // Always show the red border when shaking, regardless of online status
+            error={shakeInput}
+            disabled={isResponding}
           />
           <Button
             variant="contained"
             onClick={sendMessage}
-            disabled={isResponding} // Disable button while chatbot is responding
+            disabled={isResponding}
+            sx={{
+              "@media (max-width: 600px)": {
+                padding: '10px 12px',
+              },
+            }}
           >
             Send
           </Button>
