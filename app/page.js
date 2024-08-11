@@ -1,9 +1,9 @@
 'use client'
 import { Box, Stack, Button, TextField, Typography } from "@mui/material";
-import { useState, useEffect, useRef } from 'react';
-import { keyframes } from '@emotion/react';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import { useState, useEffect, useRef } from "react";
+import { keyframes } from "@emotion/react";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 // Define the shake animation using keyframes
 const shake = keyframes`
@@ -17,22 +17,22 @@ const shake = keyframes`
 export default function Home() {
   const [messages, setMessages] = useState([
     {
-      role: 'assistant',
-      content: `Hi! I'm the Headstarter support agent, how can I assist you today?`
-    }
+      role: "assistant",
+      content: `Hi! I'm the Headstarter support agent, how can I assist you today?`,
+    },
   ]);
 
-  const [message, setMessage] = useState('');
-  const [loadingDots, setLoadingDots] = useState('');
-  const [shakeInput, setShakeInput] = useState(false); 
-  const [apiKeyValid, setApiKeyValid] = useState(false); 
+  const [message, setMessage] = useState("");
+  const [loadingDots, setLoadingDots] = useState("");
+  const [shakeInput, setShakeInput] = useState(false);
+  const [apiKeyValid, setApiKeyValid] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     let interval;
-    if (loadingDots !== '') {
+    if (loadingDots !== "") {
       interval = setInterval(() => {
-        setLoadingDots(prev => prev.length < 3 ? prev + '.' : '');
+        setLoadingDots((prev) => (prev.length < 3 ? prev + "." : ""));
       }, 100);
     }
     return () => clearInterval(interval);
@@ -40,7 +40,7 @@ export default function Home() {
 
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
@@ -48,12 +48,12 @@ export default function Home() {
   useEffect(() => {
     const checkApiKey = async () => {
       try {
-        const response = await fetch('/api/chat', {
+        const response = await fetch("/api/chat", {
           method: "POST",
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify([{ role: 'user', content: 'Ping' }]) // A simple ping message to check API key
+          body: JSON.stringify([{ role: "user", content: "Ping" }]), // A simple ping message to check API key
         });
 
         if (response.ok) {
@@ -71,43 +71,56 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!message.trim()) {
-      setShakeInput(true); 
-      setTimeout(() => setShakeInput(false), 1000); 
+      setShakeInput(true);
+      setTimeout(() => setShakeInput(false), 1000);
       return;
     }
 
-    setMessage('');
+    setMessage("");
     setMessages((messages) => [
       ...messages,
       { role: "user", content: message },
-      { role: "assistant", content: '' },
+      { role: "assistant", content: "" },
     ]);
-    setLoadingDots('.');
+    setLoadingDots(".");
+
     try {
-      const response = await fetch('/api/chat', {
+      // Check API Key before sending the message to ensure it's back online
+      const apiKeyResponse = await fetch("/api/chat", {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify([...messages, { role: 'user', content: message }])
+        body: JSON.stringify([{ role: "user", content: "Ping" }]),
       });
 
-      if (response.ok) {
-        setApiKeyValid(true); 
+      if (apiKeyResponse.ok) {
+        setApiKeyValid(true); // Set status to online if the API key is valid again
       } else {
-        setApiKeyValid(false); 
+        setApiKeyValid(false); // Keep offline status if API key is still invalid
       }
+
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([...messages, { role: "user", content: message }]),
+      });
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
-      let result = '';
+      let result = "";
       reader.read().then(function processText({ done, value }) {
         if (done) {
-          setLoadingDots(''); 
+          setLoadingDots("");
           return result;
         }
         const text = decoder.decode(value || new Int8Array(), { stream: true });
+        if (text.includes("The chatbot is going offline")) {
+          setApiKeyValid(false); // Set status to offline if error message is received
+        }
         setMessages((messages) => {
           let lastMessage = messages[messages.length - 1];
           let otherMessages = messages.slice(0, messages.length - 1);
@@ -122,16 +135,16 @@ export default function Home() {
         return reader.read().then(processText);
       });
     } catch (error) {
-      setApiKeyValid(false); 
+      setApiKeyValid(false); // Ensure it sets to offline in case of an error
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault(); 
+    if (e.key === "Enter") {
+      e.preventDefault();
       sendMessage();
     }
-  }
+  };
 
   return (
     <Box
@@ -160,21 +173,30 @@ export default function Home() {
           {messages.map((message, index) => (
             <Box
               key={index}
-              display='flex'
-              justifyContent={message.role === 'assistant' ? 'flex-start' : 'flex-end'}
+              display="flex"
+              justifyContent={
+                message.role === "assistant" ? "flex-start" : "flex-end"
+              }
             >
               <Box
-                bgcolor={message.role === 'assistant' ? 'primary.main' : 'secondary.main'}
+                bgcolor={
+                  message.role === "assistant" ? "primary.main" : "secondary.main"
+                }
                 color="white"
                 borderRadius={7}
                 p={3}
-                style={{ whiteSpace: 'pre-wrap' }}
+                style={{
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "break-word",
+                  wordBreak: "break-word",
+                }} // CSS added to prevent overflow
               >
-                {message.content || (message.role === 'assistant' ? loadingDots : '')}
+                {message.content ||
+                  (message.role === "assistant" ? loadingDots : "")}
               </Box>
             </Box>
           ))}
-          <div ref={messagesEndRef} /> 
+          <div ref={messagesEndRef} />
         </Stack>
         <Stack direction="row" spacing={2}>
           <TextField
@@ -185,28 +207,42 @@ export default function Home() {
             onKeyDown={handleKeyDown}
             autoComplete="off"
             sx={{
-              animation: shakeInput ? `${shake} 0.5s` : 'none',
-              borderColor: shakeInput ? 'red' : 'primary.main',
-              '& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline': {
-                borderColor: shakeInput ? 'red' : 'primary.main',
+              animation: shakeInput ? `${shake} 0.5s` : "none",
+              borderColor: shakeInput ? "red" : "primary.main",
+              "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline": {
+                borderColor: shakeInput ? "red" : "primary.main",
               },
             }}
             error={shakeInput} // Always show the red border when shaking, regardless of online status
           />
-          <Button variant="contained" onClick={sendMessage}>Send</Button>
+          <Button variant="contained" onClick={sendMessage}>
+            Send
+          </Button>
         </Stack>
       </Stack>
 
-      <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center' }}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         {apiKeyValid ? (
           <>
-            <CheckCircleIcon sx={{ color: 'green', mr: 1 }} />
-            <Typography variant="body2" sx={{ color: 'green' }}>Online</Typography>
+            <CheckCircleIcon sx={{ color: "green", mr: 1 }} />
+            <Typography variant="body2" sx={{ color: "green" }}>
+              Online
+            </Typography>
           </>
         ) : (
           <>
-            <CancelIcon sx={{ color: 'red', mr: 1 }} />
-            <Typography variant="body2" sx={{ color: 'red' }}>Offline</Typography>
+            <CancelIcon sx={{ color: "red", mr: 1 }} />
+            <Typography variant="body2" sx={{ color: "red" }}>
+              Offline
+            </Typography>
           </>
         )}
       </Box>
