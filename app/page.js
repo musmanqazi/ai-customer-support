@@ -26,7 +26,9 @@ export default function Home() {
   const [loadingDots, setLoadingDots] = useState("");
   const [shakeInput, setShakeInput] = useState(false);
   const [apiKeyValid, setApiKeyValid] = useState(false);
+  const [isResponding, setIsResponding] = useState(false); // New state for tracking if chatbot is responding
   const messagesEndRef = useRef(null);
+  const [isScrollbarActive, setIsScrollbarActive] = useState(false);
 
   useEffect(() => {
     let interval;
@@ -42,6 +44,25 @@ export default function Home() {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
+  }, [messages]);
+
+  useEffect(() => {
+    // Function to check if the scrollbar is active
+    const checkScrollbar = () => {
+      const element = messagesEndRef.current?.parentElement;
+      if (element && element.scrollHeight > element.clientHeight) {
+        setIsScrollbarActive(true);
+      } else {
+        setIsScrollbarActive(false);
+      }
+    };
+
+    checkScrollbar(); // Check scrollbar on load
+    window.addEventListener('resize', checkScrollbar); // Re-check on window resize
+
+    return () => {
+      window.removeEventListener('resize', checkScrollbar);
+    };
   }, [messages]);
 
   // Check API Key on page load
@@ -76,6 +97,7 @@ export default function Home() {
       return;
     }
 
+    setIsResponding(true); // Disable input and send button while responding
     setMessage("");
     setMessages((messages) => [
       ...messages,
@@ -115,6 +137,7 @@ export default function Home() {
       reader.read().then(function processText({ done, value }) {
         if (done) {
           setLoadingDots("");
+          setIsResponding(false); // Re-enable input and send button when done
           return result;
         }
         const text = decoder.decode(value || new Int8Array(), { stream: true });
@@ -135,6 +158,7 @@ export default function Home() {
         return reader.read().then(processText);
       });
     } catch (error) {
+      setIsResponding(false); // Ensure input is re-enabled in case of an error
       setApiKeyValid(false); // Ensure it sets to offline in case of an error
     }
   };
@@ -142,7 +166,9 @@ export default function Home() {
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      sendMessage();
+      if (!isResponding) {
+        sendMessage();
+      }
     }
   };
 
@@ -162,6 +188,11 @@ export default function Home() {
         border="1px solid black"
         p={2}
         spacing={2}
+        sx={{
+          overflowY: 'auto',
+          marginRight: 0,
+          paddingRight: 0,
+        }}
       >
         <Stack
           direction="column"
@@ -169,6 +200,9 @@ export default function Home() {
           flexGrow={1}
           overflow="auto"
           max="100%"
+          sx={{
+            paddingRight: '16px'
+          }}
         >
           {messages.map((message, index) => (
             <Box
@@ -179,6 +213,7 @@ export default function Home() {
               }
             >
               <Box
+                sx={{ maxWidth: "87.5%" }} // Limits the width of the message bubbles
                 bgcolor={
                   message.role === "assistant" ? "primary.main" : "secondary.main"
                 }
@@ -189,7 +224,7 @@ export default function Home() {
                   whiteSpace: "pre-wrap",
                   overflowWrap: "break-word",
                   wordBreak: "break-word",
-                }} // CSS added to prevent overflow
+                }}
               >
                 {message.content ||
                   (message.role === "assistant" ? loadingDots : "")}
@@ -198,7 +233,13 @@ export default function Home() {
           ))}
           <div ref={messagesEndRef} />
         </Stack>
-        <Stack direction="row" spacing={2}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            paddingRight: '16px', // Ensures padding for the send button
+          }}
+        >
           <TextField
             label="Message"
             fullWidth
@@ -215,7 +256,11 @@ export default function Home() {
             }}
             error={shakeInput} // Always show the red border when shaking, regardless of online status
           />
-          <Button variant="contained" onClick={sendMessage}>
+          <Button
+            variant="contained"
+            onClick={sendMessage}
+            disabled={isResponding} // Disable button while chatbot is responding
+          >
             Send
           </Button>
         </Stack>
