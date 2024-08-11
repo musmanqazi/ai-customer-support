@@ -1,9 +1,12 @@
 'use client'
-import { Box, Stack, Button, TextField, Typography } from "@mui/material";
+import { Box, Stack, Button, TextField, Typography, IconButton } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import { keyframes } from "@emotion/react";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 // Define the shake animation using keyframes
 const shake = keyframes`
@@ -27,6 +30,7 @@ export default function Home() {
   const [shakeInput, setShakeInput] = useState(false);
   const [apiKeyValid, setApiKeyValid] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const messagesEndRef = useRef(null);
   const [isScrollbarActive, setIsScrollbarActive] = useState(false);
 
@@ -169,149 +173,189 @@ export default function Home() {
     }
   };
 
+  const lightTheme = createTheme({
+    palette: {
+      mode: 'light',
+      primary: {
+        main: '#3f51b5',
+      },
+      secondary: {
+        main: '#f50057',
+      },
+      background: {
+        default: '#f5f5f5',
+      },
+    },
+  });
+
+  const darkTheme = createTheme({
+    palette: {
+      mode: 'dark',
+      primary: {
+        main: '#90caf9',
+      },
+      secondary: {
+        main: '#f48fb1',
+      },
+      background: {
+        default: '#303030',
+      },
+    },
+  });
+
   return (
-    <Box
-      width="100vw"
-      height="100vh"
-      display="flex"
-      flexDirection="column"
-      justifyContent="center"
-      alignItems="center"
-      sx={{
-        padding: "16px",
-        boxSizing: "border-box",
-      }}
-    >
-      <Stack
-        direction="column"
-        width={{ xs: "100%", sm: "100%", md: "600px" }}
-        height={{ xs: "90vh", sm: "90vh", md: "700px" }}
-        border="1px solid black"
-        p={2}
-        spacing={2}
+    <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
+      <Box
+        width="100vw"
+        height="100vh"
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
         sx={{
-          overflowY: 'auto',
-          marginRight: 0,
-          paddingRight: 0,
+          padding: "16px",
+          boxSizing: "border-box",
+          backgroundColor: "background.default",
         }}
       >
         <Stack
           direction="column"
-          spacing={2}
-          flexGrow={1}
-          overflow="auto"
-          max="100%"
-          sx={{
-            paddingRight: '16px',
-            paddingLeft: '16px',
-            "@media (max-width: 600px)": {
-              paddingRight: isScrollbarActive ? '12px' : '12px',
-              paddingLeft: '12px',
-            },
-          }}
-        >
-          {messages.map((message, index) => (
-            <Box
-              key={index}
-              display="flex"
-              justifyContent={
-                message.role === "assistant" ? "flex-start" : "flex-end"
-              }
-            >
-              <Box
-                sx={{
-                  maxWidth: "87.5%", 
-                  bgcolor: message.role === "assistant" ? "primary.main" : "secondary.main",
-                  color: "white",
-                  borderRadius: 7,
-                  p: 3,
-                  style: {
-                    whiteSpace: "pre-wrap",
-                    overflowWrap: "break-word",
-                    wordBreak: "break-word",
-                  },
-                  "@media (max-width: 600px)": {
-                    padding: 2,
-                    maxWidth: "80%", // Slightly reduce bubble width on mobile
-                  },
-                }}
-              >
-                {message.content || (message.role === "assistant" ? loadingDots : "")}
-              </Box>
-            </Box>
-          ))}
-          <div ref={messagesEndRef} />
-        </Stack>
-        <Stack
-          direction="row"
+          width={{ xs: "100%", sm: "100%", md: "600px" }}
+          height={{ xs: "90vh", sm: "90vh", md: "700px" }}
+          border="1px solid black"
+          p={2}
           spacing={2}
           sx={{
-            paddingRight: '16px',
-            "@media (max-width: 600px)": {
-              paddingRight: '12px',
-            },
+            overflowY: 'auto',
+            marginRight: 0,
+            paddingRight: 0,
+            backgroundColor: darkMode ? "#424242" : "#ffffff",
+            boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+            borderRadius: "8px",
           }}
         >
-          <TextField
-            label="Message"
-            fullWidth
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            autoComplete="off"
+          <Stack
+            direction="column"
+            spacing={2}
+            flexGrow={1}
+            overflow="auto"
+            max="100%"
             sx={{
-              animation: shakeInput ? `${shake} 0.5s` : "none",
-              borderColor: shakeInput ? "red" : "primary.main",
-              "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline": {
-                borderColor: shakeInput ? "red" : "primary.main",
-              },
+              paddingRight: '16px',
+              paddingLeft: '16px',
               "@media (max-width: 600px)": {
-                padding: '10px',
-              },
-            }}
-            error={shakeInput}
-            disabled={isResponding}
-          />
-          <Button
-            variant="contained"
-            onClick={sendMessage}
-            disabled={isResponding}
-            sx={{
-              "@media (max-width: 600px)": {
-                padding: '10px 12px',
+                paddingRight: isScrollbarActive ? '12px' : '12px',
+                paddingLeft: '12px',
               },
             }}
           >
-            Send
-          </Button>
+            {messages.map((message, index) => (
+              <Box
+                key={index}
+                display="flex"
+                justifyContent={
+                  message.role === "assistant" ? "flex-start" : "flex-end"
+                }
+              >
+                <Box
+                  sx={{
+                    maxWidth: "87.5%", 
+                    bgcolor: message.role === "assistant" ? "primary.main" : "secondary.main",
+                    color: "white",
+                    borderRadius: 7,
+                    p: 3,
+                    style: {
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "break-word",
+                      wordBreak: "break-word",
+                    },
+                    "@media (max-width: 600px)": {
+                      padding: 2,
+                      maxWidth: "80%", // Slightly reduce bubble width on mobile
+                    },
+                  }}
+                >
+                  {message.content || (message.role === "assistant" ? loadingDots : "")}
+                </Box>
+              </Box>
+            ))}
+            <div ref={messagesEndRef} />
+          </Stack>
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              paddingRight: '16px',
+              "@media (max-width: 600px)": {
+                paddingRight: '12px',
+              },
+            }}
+          >
+            <TextField
+              label="Message"
+              fullWidth
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              sx={{
+                animation: shakeInput ? `${shake} 0.5s` : "none",
+                borderColor: shakeInput ? "red" : "primary.main",
+                "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline": {
+                  borderColor: shakeInput ? "red" : "primary.main",
+                },
+                "@media (max-width: 600px)": {
+                  padding: '10px',
+                },
+                backgroundColor: darkMode ? "#333" : "#fff",
+              }}
+              error={shakeInput}
+              disabled={isResponding}
+            />
+            <Button
+              variant="contained"
+              onClick={sendMessage}
+              disabled={isResponding}
+              sx={{
+                "@media (max-width: 600px)": {
+                  padding: '10px 12px',
+                },
+              }}
+            >
+              Send
+            </Button>
+          </Stack>
         </Stack>
-      </Stack>
 
-      <Box
-        sx={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        {apiKeyValid ? (
-          <>
-            <CheckCircleIcon sx={{ color: "green", mr: 1 }} />
-            <Typography variant="body2" sx={{ color: "green" }}>
-              Online
-            </Typography>
-          </>
-        ) : (
-          <>
-            <CancelIcon sx={{ color: "red", mr: 1 }} />
-            <Typography variant="body2" sx={{ color: "red" }}>
-              Offline
-            </Typography>
-          </>
-        )}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <IconButton onClick={() => setDarkMode(!darkMode)} color="inherit">
+            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
+          {apiKeyValid ? (
+            <>
+              <CheckCircleIcon sx={{ color: "green", mr: 1 }} />
+              <Typography variant="body2" sx={{ color: "green" }}>
+                Online
+              </Typography>
+            </>
+          ) : (
+            <>
+              <CancelIcon sx={{ color: "red", mr: 1 }} />
+              <Typography variant="body2" sx={{ color: "red" }}>
+                Offline
+              </Typography>
+            </>
+          )}
+        </Box>
       </Box>
-    </Box>
+    </ThemeProvider>
   );
 }
