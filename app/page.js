@@ -21,7 +21,7 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: `Hi! I'm the Headstarter support agent, how can I assist you today?`,
+      content: `Hi! I'm the Headstarter AI support agent, how can I assist you today?`,
     },
   ]);
 
@@ -128,7 +128,15 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify([...messages, { role: "user", content: message }]),
+        body: JSON.stringify([
+          {
+            role: "system",
+            content:
+              "You are a helpful AI support agent for Headstarter AI, a 7-week fellowship that helps early-career software engineers build 5 real-world AI projects and collaborate with startups. Fellows gain mentorship, exposure to cutting-edge AI tools, and experience solving startup-level problems. Respond clearly and helpfully to any questions.",
+          },
+          ...messages,
+          { role: "user", content: message },
+        ]),        
       });
 
       const reader = response.body.getReader();
@@ -142,9 +150,6 @@ export default function Home() {
           return result;
         }
         const text = decoder.decode(value || new Int8Array(), { stream: true });
-        if (text.includes("The chatbot is going offline")) {
-          setApiKeyValid(false);
-        }
         setMessages((messages) => {
           let lastMessage = messages[messages.length - 1];
           let otherMessages = messages.slice(0, messages.length - 1);
